@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -11,6 +12,18 @@ type TTLCache struct {
 
 func NewTTLCache() *TTLCache {
 	return &TTLCache{}
+}
+
+func (c *TTLCache) Run(ctx context.Context, deletionPeriod time.Duration) error {
+	ticker := time.NewTicker(deletionPeriod)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+			c.DeleteExpired()
+		}
+	}
 }
 
 func (c *TTLCache) Put(key string, value interface{}, expirationTime time.Time) {
@@ -37,8 +50,12 @@ func (c *TTLCache) DeleteExpired() int {
 	count := 0
 
 	c.keyToItem.Range(func(key, value any) bool {
-		if value.(ttlCacheItem).expirationTime.Before(time.Now()) {
-			c.keyToItem.Delete(key)
+		if !value.(ttlCacheItem).expirationTime.Before(time.Now()) {
+			return true
+		}
+
+		deleted := c.keyToItem.CompareAndDelete(key, value)
+		if deleted {
 			count += 1
 		}
 		return true
