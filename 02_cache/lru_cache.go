@@ -3,12 +3,14 @@ package cache
 import (
 	"container/list"
 	"errors"
+	"sync"
 )
 
 type LRUCache struct {
 	keyToElement map[string]*list.Element
 	list         *list.List
 	capacity     int
+	rw           sync.RWMutex
 }
 
 type lruCacheItem struct {
@@ -29,6 +31,9 @@ func NewLRUCache(capacity int) (*LRUCache, error) {
 }
 
 func (c *LRUCache) Put(key string, value any) {
+	c.rw.Lock()
+	defer c.rw.Unlock()
+
 	if elem, ok := c.keyToElement[key]; ok {
 		c.list.MoveToFront(elem)
 		elem.Value = lruCacheItem{
@@ -57,6 +62,9 @@ func (c *LRUCache) Put(key string, value any) {
 }
 
 func (c *LRUCache) Get(key string) (any, bool) {
+	c.rw.RLock()
+	defer c.rw.RUnlock()
+
 	if elem, ok := c.keyToElement[key]; ok {
 		c.list.MoveToFront(elem)
 		return elem.Value.(lruCacheItem).value, true
