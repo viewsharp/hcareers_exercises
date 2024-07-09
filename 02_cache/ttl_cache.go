@@ -16,6 +16,8 @@ func NewTTLCache() *TTLCache {
 
 func (c *TTLCache) Run(ctx context.Context, deletionPeriod time.Duration) error {
 	ticker := time.NewTicker(deletionPeriod)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
