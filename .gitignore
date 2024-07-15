@@ -23,3 +23,5 @@ go.work.sum
 
 # JB GoLand
 .idea
+
+.DS_Store
