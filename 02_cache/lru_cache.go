@@ -10,7 +10,7 @@ type LRUCache struct {
 	keyToElement map[string]*list.Element
 	list         *list.List
 	capacity     int
-	rw           sync.RWMutex
+	mutex        sync.Mutex
 }
 
 type lruCacheItem struct {
@@ -31,8 +31,8 @@ func NewLRUCache(capacity int) (*LRUCache, error) {
 }
 
 func (c *LRUCache) Put(key string, value any) {
-	c.rw.Lock()
-	defer c.rw.Unlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	if elem, ok := c.keyToElement[key]; ok {
 		c.list.MoveToFront(elem)
@@ -62,8 +62,8 @@ func (c *LRUCache) Put(key string, value any) {
 }
 
 func (c *LRUCache) Get(key string) (any, bool) {
-	c.rw.RLock()
-	defer c.rw.RUnlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	if elem, ok := c.keyToElement[key]; ok {
 		c.list.MoveToFront(elem)
